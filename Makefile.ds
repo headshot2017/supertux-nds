@@ -1,0 +1,78 @@
+#---------------------------------------------------------------------------------
+.SUFFIXES:
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(DEVKITARM)),)
+$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
+endif
+
+include $(DEVKITARM)/ds_rules
+
+export TARGET		:=	$(shell basename $(CURDIR))
+export TOPDIR		:=	$(CURDIR)
+
+
+.PHONY: arm7/$(TARGET).elf arm9/$(TARGET).elf
+
+#---------------------------------------------------------------------------------
+TEXT1		=	SuperTux DS
+TEXT2		=	Milestone 1
+TEXT3		=	Port by Headshotnoby
+ICON		=  	icon.bmp
+NITRODIR	:= -d nitrofiles
+#---------------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
+all: mp3maxmod
+
+#---------------------------------------------------------------------------------
+$(TARGET).nds	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
+	@echo Compiling ARM7 and ARM9
+	ndstool -c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf -b $(ICON) "$(TEXT1);$(TEXT2);$(TEXT3)";
+
+$(TARGET)NITRO.nds	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
+	@echo Compiling ARM7 and ARM9
+	ndstool -c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf -b $(ICON) "$(TEXT1);$(TEXT2);$(TEXT3)" $(NITRODIR)
+
+#---------------------------------------------------------------------------------
+arm7/$(TARGET).elf:
+	@echo Compiling ARM7
+	@$(MAKE) -C arm7
+
+#---------------------------------------------------------------------------------
+arm9/$(TARGET).elf:
+	@echo Compiling ARM9
+	@$(MAKE) -C arm9
+
+#---------------------------------------------------------------------------------
+clean:
+	@$(MAKE) -C arm9 clean
+	@$(MAKE) -C arm7 clean
+	@rm -f $(TARGET).nds arm7/$(TARGET).elf arm9/$(TARGET).elf
+
+# MaxMod / MP3 / MP3Wifi targets using FAT
+maxmod: export MYDEFS := -DDS_MAXMOD -DDS_WIFI
+maxmod: $(TARGET).nds
+
+mp3: export MYDEFS := -DDS_MP3
+mp3: $(TARGET).nds
+
+mp3wifi: export MYDEFS := -DDS_MP3 -DDS_WIFI
+mp3wifi: $(TARGET).nds
+
+mp3maxmod: export MYDEFS := -DDS_MP3 -DDS_MAXMOD
+mp3maxmod: $(TARGET).nds
+
+# MaxMod / MP3 / MP3Wifi targets using NitroFS
+maxmod-nitro: export MYDEFS := -DDS_MAXMOD -DDS_WIFI -DDS_NITROFS
+maxmod-nitro: $(TARGET)NITRO.nds
+
+mp3-nitro: export MYDEFS := -DDS_MP3 -DDS_NITROFS
+mp3-nitro: $(TARGET)NITRO.nds
+
+mp3wifi-nitro: export MYDEFS := -DDS_MP3 -DDS_WIFI -DDS_NITROFS
+mp3wifi-nitro: $(TARGET)NITRO.nds
+
+mp3maxmod-nitro: export MYDEFS := -DDS_MP3 -DDS_MAXMOD -DDS_NITROFS
+mp3maxmod-nitro: $(TARGET).nds
